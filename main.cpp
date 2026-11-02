@@ -2,6 +2,8 @@
 #include <vector>
 #include <random>
 #include <chrono>
+#include <algorithm>
+#include <cassert>
 
 void InsertionSort(std::vector<int>& arr) {
     /**
@@ -83,7 +85,7 @@ int Partition(std::vector<int> &arr, int low, int high) {
     return i;
 }
 
-void Quicksort(std::vector<int> &arr, int low, int high) {
+void QuickSort(std::vector<int> &arr, int low, int high) {
     // Base case
     if (high <= low) {
         return;
@@ -92,10 +94,10 @@ void Quicksort(std::vector<int> &arr, int low, int high) {
     int pivotIndex = Partition(arr, low, high);
 
     // left subarray recursive call
-    Quicksort(arr, low, pivotIndex - 1);
+    QuickSort(arr, low, pivotIndex - 1);
 
     // right subarray recursive call
-    Quicksort(arr, pivotIndex + 1, high);
+    QuickSort(arr, pivotIndex + 1, high);
 }
 
 void CountingSort(std::vector<int> &arr, int k) {
@@ -161,30 +163,114 @@ std::vector<int> GenerateRandomArray(int size, int k) {
     return arr;
 }
 
+bool validSorted(std::vector<int> &arr) {
+    for (size_t i = 0; i < arr.size() - 1; i++) {
+        if (!(arr[i] <= arr[i + 1])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void WarmUp() {
+    std::vector<int> practice = {5, 2, 8, 1, 4};
+    std::vector<int> insertionSortPracArray(practice);
+    std::vector<int> quickSortPracArray(practice);
+    std::vector<int> countingSortPracArray(practice);
+
+    InsertionSort(insertionSortPracArray);
+    QuickSort(quickSortPracArray, 0, static_cast<int>(quickSortPracArray.size() - 1));
+    CountingSort(countingSortPracArray, 8);
+}
+
+double GetMedian(std::vector<double> &arr) {
+    std::sort(arr.begin(), arr.end());
+    // If the array has even length
+    if (arr.size() % 2 == 0) {
+        return (arr[(arr.size() / 2)] + arr[(arr.size() / 2) - 1]) / 2;
+    } else { // If array has odd length
+        return arr[(arr.size() / 2)];
+    }
+}
+
 int main() {
-    std::vector<int> randomArray = GenerateRandomArray(10, 100);
-    std::vector<int> insertionArr(randomArray);
-    std::vector<int> quickArray(randomArray);
-    std::vector<int> countingArr(randomArray);
+    WarmUp();
 
-    std::cout << "Unsorted array: ";
-    for (int num : insertionArr) {
-        std::cout << num << " ";
-    }
-    std::cout << "\n";
-
-    auto start = std::chrono::steady_clock::now();
-    InsertionSort(insertionArr);
-    auto end = std::chrono::steady_clock::now();
-
-    std::cout << "Sorted array: ";
-    for (int num : insertionArr) {
-        std::cout << num << " ";
-    }
-
-    std::chrono::duration<double, std::milli> elapsed = end - start;
-    std::cout << "\n" << elapsed.count() << " ms" << std::endl;
+    std::vector<int> sizes = {
+        10, 100, 1000, 2000, 5000, 10000, 20000
+    };
     
-    std::cout << std::endl;
+    for (int n : sizes) {
+        for (int multiplier : {1, 100}) {
+            int k = n * multiplier;
+
+            std::cout << "TESTING FOR N = " << n
+                    << ", K = " << k << "\n";
+
+            std::vector<double> insertionTimes;
+            std::vector<double> quickTimes;
+            std::vector<double> countingTimes;
+
+            for (int i = 0; i < 5; i++) {
+                std::vector<int> randomArray = GenerateRandomArray(n, k);
+                
+                std::vector<int> expected(randomArray);
+                std::sort(expected.begin(), expected.end());
+
+                std::vector<int> insertionArray(randomArray);
+                std::vector<int> quickArray(randomArray);
+                std::vector<int> countingArray(randomArray);
+
+                std::cout << "TRIAL " << (i + 1) << "\n";
+                
+                /**
+                 * INSERTION SORT
+                 */
+                auto start = std::chrono::steady_clock::now();
+                InsertionSort(insertionArray);
+                auto end = std::chrono::steady_clock::now();
+
+                std::chrono::duration<double, std::milli> elapsed = end - start;
+                std::cout << "Insertion sort time: " << elapsed.count() << "\n";
+                insertionTimes.push_back(elapsed.count());
+
+                /**
+                 * QUICK SORT
+                 */
+
+                start = std::chrono::steady_clock::now();
+                QuickSort(quickArray, 0, static_cast<int>(quickArray.size() - 1));
+                end = std::chrono::steady_clock::now();
+
+                elapsed = end - start;
+                std::cout << "Quick sort time: " << elapsed.count() << "\n";
+                quickTimes.push_back(elapsed.count());
+
+                /**
+                 * COUNTING SORT
+                 */
+
+                start = std::chrono::steady_clock::now();
+                CountingSort(countingArray, k);
+                end = std::chrono::steady_clock::now();
+
+                elapsed = end - start;
+                std::cout << "Counting sort time: " << elapsed.count() << "\n";
+                countingTimes.push_back(elapsed.count());
+
+                assert(insertionArray == expected);
+                assert(quickArray == expected);
+                assert(countingArray == expected);
+                
+                std::cout << "\n";
+            }
+            std::cout << "MEDIAN FOR INSERTION : " << GetMedian(insertionTimes) << "\n";
+            std::cout << "MEDIAN FOR QUICK : " << GetMedian(quickTimes) << "\n";
+            std::cout << "MEDIAN FOR COUNTING : " << GetMedian(countingTimes) << "\n"; 
+            std::cout << "------------------------------------------\n";    
+        }
+    }
+
     return 0;
 }
