@@ -149,6 +149,41 @@ void CountingSort(std::vector<int> &arr, int k) {
     }
 }
 
+void CountingSortTagged(std::vector<std::pair<int, char>>& arr, int k) {
+    // Initialize count array
+    std::vector<int> count;
+
+    for (int i = 0; i < k + 1; i++) {
+        count.push_back(0);
+    }
+
+    // Count frequencies using integer keys
+    for (size_t i = 0; i < arr.size(); i++) {
+        int desired_index = arr[i].first;
+        count[desired_index]++;
+    }
+
+    // Calculate cumulative counts
+    for (int i = 1; i <= k; i++) {
+        count[i] += count[i - 1];
+    }
+
+    // Create output array of pairs
+    std::vector<std::pair<int, char>> output(arr.size());
+
+    // Stable placement from right to left
+    for (int i = static_cast<int>(arr.size()) - 1; i >= 0; i--) {
+        int position = count[arr[i].first] - 1;
+        output[position] = arr[i];
+        count[arr[i].first]--;
+    }
+
+    // Copy sorted records back
+    for (size_t i = 0; i < arr.size(); i++) {
+        arr[i] = output[i];
+    }
+}
+
 std::vector<int> GenerateRandomArray(int size, int k) {
     static std::mt19937 rng(std::random_device{}());
     std::uniform_int_distribution<int> dist(0, k);
@@ -171,6 +206,87 @@ bool validSorted(std::vector<int> &arr) {
     }
 
     return true;
+}
+
+void TestMeInsertionSort(std::vector<int> arr) {
+    std::vector<int> expected(arr);
+    std::vector<int> insertionArr(arr);
+
+    std::sort(expected.begin(), expected.end());
+    InsertionSort(insertionArr);
+
+    std::cout << "Insertion Sort result: ";
+    for (int num : insertionArr) {
+        std::cout << num << " ";
+    }
+    std::cout << "\n";
+
+    assert(insertionArr == expected);
+    std::cout << "Insertion Sort test PASSED!\n";
+}
+
+void TestMeQuickSort(std::vector<int> arr) {
+    std::vector<int> expected(arr);
+    std::vector<int> quickArr(arr);
+
+    std::sort(expected.begin(), expected.end());
+    QuickSort(quickArr, 0, static_cast<int>(quickArr.size()) - 1);
+
+    std::cout << "Quick Sort result: ";
+    for (int num : quickArr) {
+        std::cout << num << " ";
+    }
+    std::cout << "\n";
+
+    assert(quickArr == expected);
+    std::cout << "Quick Sort test PASSED!\n";
+}
+
+void TestMeCountingSort(std::vector<int> arr, int k) {
+    std::vector<int> expected(arr);
+    std::vector<int> countingArr(arr);
+
+    std::sort(expected.begin(), expected.end());
+    CountingSort(countingArr, k);
+
+    std::cout << "Counting Sort result: ";
+    for (int num : countingArr) {
+        std::cout << num << " ";
+    }
+    std::cout << "\n";
+
+    assert(countingArr == expected);
+    std::cout << "Counting Sort test PASSED!\n";
+}
+
+void TestCountingSortStability() {
+    std::vector<std::pair<int, char>> records = {
+        {2, 'a'},
+        {1, 'b'},
+        {2, 'c'},
+        {1, 'd'}
+    };
+
+    std::vector<std::pair<int, char>> expected = {
+        {1, 'b'},
+        {1, 'd'},
+        {2, 'a'},
+        {2, 'c'}
+    };
+
+    CountingSortTagged(records, 2);
+
+    std::cout << "Tagged Counting Sort result: ";
+
+    for (const auto& record : records) {
+        std::cout << "(" << record.first << ","
+                  << record.second << ") ";
+    }
+
+    std::cout << "\n";
+
+    assert(records == expected);
+    std::cout << "Counting Sort stability test PASSED!\n";
 }
 
 void WarmUp() {
